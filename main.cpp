@@ -13,122 +13,124 @@
 #include <stdio.h>
 #include <vector>
 #include <limits>
+#include <algorithm>
 
 #define MAX_NUM_ROOMS 100
-#define TRUE 1
-#define FALSE 0
 
 using namespace std;
+
+/*
+ * Customer Information
+ */
+struct customerStructure
+{
+    int roomNumber;
+    string customerName;
+    string customerAddress;
+    string customerPhone;
+    bool checkedIn;
+};
+
+/*
+ * Room Information
+ */
+struct hotelStructure
+{
+    int roomNumber;
+    int numberBeds;
+    bool isSuite;
+    bool smoking;
+    bool isOccupided;
+};
 
 class hotelManagement
 {
 public:
 
+    hotelManagement();
     /*
-     * Customer Information
+     * displayMainMenu() - this handles the main menu
      */
-    struct customerStructure
-    {
-        int roomNumber;
-        string customerName;
-        string customerAddress;
-        string customerPhone;
-        bool checkedIn;
-    };
+    int displayMainMenu();
 
-    /*
-     * Room Information
-     */
-    struct hotelStructure
-    {
-        int roomNumber;
-        int numberBeds;
-        bool isSuite;
-        bool smoking;
-        bool isOccupided;
-    };
+private:
 
-    string hotelRecordFile;
-    string customerRecordFile;
+    string hotelFileName;
+    string customerFileName;
 
-    ifstream customorFile;
-    ifstream hotelFile;
+    ifstream customorFileStream;
+    ifstream hotelFileStream;
 
 
     //customerStructure tempCustomer;
 
+    /*
+     * Container object to store data read in from a file also stores and changes made.
+     */
     vector<customerStructure> customerRecord;
     vector<hotelStructure> hotelRecord;
 
-    hotelManagement();
-
-    int displayMainMenu();
-
-    void loadCustomerFile();
-
-    void loadHotelFile();
-
-    void readCustomerFile();
-
-    void readHotelFile();
-
+    /*
+     * bookRoomMenu() - this handles room booking menu
+     */
     void bookRoomMenu();
 
-    void bookRoom();
+    /*
+     * loadCustomerFile - open the file and call the function to read in the data
+     */
+    void loadCustomerFile();
+
+    /*
+     * loadHotelFile - read in the data of the file and store it
+     */
+    void loadHotelFile();
+
+    /*
+     * readCustomerFile - open the file and call the function to read in the data
+     */
+    void readCustomerFile();
+
+    /*
+     * readHotelFile - read in the data of the file and store it
+     */
+    void readHotelFile();
+
+    void bookRoomByNum();
 
     void bookRoomByType();
-
+    /*
+     * isValidRoomNumber - will check if the room number is a valid room number
+     */
     void isValidRoomNumber(int , int&, bool& );
+
+    /*
+     * getUserInputAlpha - will ask the user a question and verify the inputed answer
+     */
+    void getUserInputAlpha(string , int, bool& );
 
     bool enterCustomerInfo(int, int);
 
     void displayCustomerRecordMenu();
 
+    void findCustomInfo();
 
-private:
+    void findByName();
 
-    /*
-     * Book a room
-     */
-    //void bookRoom();
-    /*
-     * Display customer records
-     */
-    //void displayCustomerRecords();
-
-
-    /*
-     * Display room status
-     */
-    //void displayRoomStatus();
-    /*
-     * Edit customer record
-     */
-    //void editCustomorRecord();
-    /*
-     * Get a rooms status
-     */
-    //int roomStatus(int);
-    /*
-     * Modify customer record
-     */
-    //void modifyCustomerRecord(int);
-    /*
-     * Delete customer record
-     */
-    //void deleteCustomerRecord(int);
+    void findByRoomNum();
 
 };
 
 hotelManagement :: hotelManagement()
 {
-
     /*
-     * Record file for current customers
-     * Holds customer attributes (Room number, Customer name, Customer address, Customer phone number, check in time, check out time)
+     *
      */
+    customerFileName = "Customer_Records.txt";
+    hotelFileName = "Hotel_Records.txt";
+
     loadCustomerFile();
     loadHotelFile();
+    system("pause");
 }
 
 int hotelManagement :: displayMainMenu()
@@ -142,7 +144,9 @@ int hotelManagement :: displayMainMenu()
      * 5.
      */
     int selection;
+    bool exitProgram = false;
 
+    selection = 0;
     /*
      * Using system("cls") to keep the screen clean.
      */
@@ -157,10 +161,8 @@ int hotelManagement :: displayMainMenu()
     cout << "3. " << endl;
     cout << "4. " << endl;
     cout << "5. " << endl;
-    cout << "6. Return to Main Menu." << endl;
+    cout << "6. Exit program." << endl;
     cout << "Enter selection here : ";
-
-
 
     while (!(cin >> selection))
     {
@@ -170,7 +172,7 @@ int hotelManagement :: displayMainMenu()
         cout <<"Please enter a menu selection : ";
     }
 
-    while (selection)
+    while (!exitProgram)
     {
         switch (selection)
         {
@@ -181,8 +183,8 @@ int hotelManagement :: displayMainMenu()
                     break;
             case 2:
                 cout << endl;
-                cout << "Book a room by type has been selected." << endl;
-                bookRoomByType();
+                cout << "Look up a customer has been selected." << endl;
+                findCustomInfo();
                     break;
             case 3: //displayRoomStatus();
                     break;
@@ -191,15 +193,32 @@ int hotelManagement :: displayMainMenu()
 
             case 5:
             case 6:
-                cout << "Return to Main Menu has been selected." << endl;
-                displayMainMenu();
+                exitProgram = true;
+                cout << "Exit program: " << selection<< endl;
                 break;
             default:
-                cout << "Invalid Selection" << endl;
                 system("pause");
-                displayMainMenu();
+                cout << "Invalid Selection" << endl;
+                while (!(cin >> selection))
+                {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize> :: max(), '\n');
+                    cout << "You did not enter a correct menu item ." << endl;
+                    cout <<"Please enter a menu selection : ";
+                }
 
         }
+    }
+
+    if(exitProgram)
+    {
+        cout << "Should call something to update the data files" << endl;
+    }
+    else
+    {
+        cout << "Calling SELF again!" << endl;
+        system("pause");
+        displayMainMenu();
     }
     return 0;
 }
@@ -210,43 +229,41 @@ void hotelManagement :: loadHotelFile()
      * Record file for hotel records
      * Holds room attributes (Room Number, Number of beds, Suite, Smoking, Occupied)
      */
-    hotelRecordFile = "Hotel_Records.txt";
+
     /*
      * Read in Hotel File
      */
-    hotelFile.open(hotelRecordFile);
+    hotelFileStream.open(hotelFileName);
 
-    if (hotelFile.fail())
+    if (hotelFileStream.fail())
     {
         cout << "\nThere was a problem opening the file.";
     }
     else
     {
-        while (!hotelFile.eof())
+        while (!hotelFileStream.eof())
         {
             readHotelFile();
         }
-        cout << "\nFINISHED READING HOTEL FILE";
+        cout << "\nFINISHED READING HOTEL FILE" << endl;
     }
 }
 
 void hotelManagement :: loadCustomerFile()
 {
-    customerRecordFile = "Customer_Records.txt";
+    customorFileStream.open(customerFileName);
 
-    customorFile.open("Customer_Records.txt");
-
-    if (customorFile.fail())
+    if (customorFileStream.fail())
     {
         cout << "\nThere was a problem opening the file.";
     }
     else
     {
-        while (!customorFile.eof())
+        while (!customorFileStream.eof())
         {
             readCustomerFile();
         }
-        cout << "\nFINISHED READING CUSTOMER FILE\n";
+        cout << "\nFINISHED READING CUSTOMER FILE\n" << endl;
 
     }
 }
@@ -259,31 +276,31 @@ void hotelManagement :: readHotelFile()
     /*
      * Get Room Number
      */
-    getline(hotelFile, tempLine, ',');
+    getline(hotelFileStream, tempLine, ',');
     tempHotel.roomNumber = stoi(tempLine);
 
     /*
      * Get Number of Beds
      */
-    getline(hotelFile, tempLine, ',');
+    getline(hotelFileStream, tempLine, ',');
     tempHotel.numberBeds = stoi(tempLine);
 
     /*
      * Get is it a Suite
      */
-    getline(hotelFile, tempLine, ',');
+    getline(hotelFileStream, tempLine, ',');
     tempHotel.isSuite = bool(stoi(tempLine));
 
     /*
      * get is smoking allowed
      */
-    getline(hotelFile, tempLine, ',');
+    getline(hotelFileStream, tempLine, ',');
     tempHotel.smoking = bool(stoi(tempLine));
 
     /*
      * Get is room occupied
      */
-    getline(hotelFile, tempLine, '\n');
+    getline(hotelFileStream, tempLine, '\n');
     tempHotel.isOccupided = bool(stoi(tempLine));
 
     hotelRecord.push_back(tempHotel);
@@ -294,31 +311,35 @@ void hotelManagement :: readCustomerFile ()
     /*
      * Read in the customer file and store it in a vector
      */
-
     customerStructure tempCustomer;
     string tempLine;
 
-    getline(customorFile, tempLine, ',');
+    getline(customorFileStream, tempLine, ',');
     tempCustomer.roomNumber = stoi(tempLine);
-    cout << "\nRoom number is : " << tempCustomer.roomNumber;
 
-    getline(customorFile, tempCustomer.customerName, ',');
+    getline(customorFileStream, tempCustomer.customerName, ',');
 
-    getline(customorFile, tempCustomer.customerAddress, ',');
+    getline(customorFileStream, tempCustomer.customerAddress, ',');
 
-    getline(customorFile, tempCustomer.customerPhone, ',');
+    getline(customorFileStream, tempCustomer.customerPhone, ',');
 
-    getline(customorFile, tempLine, '\n');
+    getline(customorFileStream, tempLine, '\n');
     tempCustomer.checkedIn = bool(stoi(tempLine));
 
+    /*
+     * Add the read in structure into the vector
+     */
     customerRecord.push_back(tempCustomer);
 
 }
 
-void hotelManagement :: bookRoom()
+void hotelManagement :: bookRoomByNum()
 {
+    /*
+     * Book a room by number
+     */
     int tempRoomNum = 0, vectorIndex = 0;
-    bool validBooking = FALSE, validRoomNumber = FALSE;
+    bool validBooking = false, validRoomNumber = false;
 
     system("cls");
 
@@ -366,7 +387,7 @@ void hotelManagement :: bookRoom()
                 else
                 {
                     cout << "This room Occupied." << endl;
-                    validRoomNumber = FALSE;
+                    validRoomNumber = false;
                 }
         }
 
@@ -398,9 +419,9 @@ void hotelManagement :: bookRoomByType()
  * search through available rooms and return and room number
  * call enterCustomerInfo
  */
-    int numberBeds = 0, floorNum = 0;
-    char roomType = ' ', smokingRoom = ' ', floorPref = ' ', bookRoom = ' ';
-    bool isSuite = 0, isSmoking = 0, isItOK = 0;
+    int numberBeds = 0, floorNum = 0, strSelectionIndex = 0, foundRoomInd = 0, floorCnt = 0, indMax = 0;
+    bool isSuite = false, isSmoking = false, isFloorPref = false, isValidNum = false, bookRoom = false, foundRoom = false;
+    string strQuestion;
 
     system("cls");
 
@@ -408,92 +429,101 @@ void hotelManagement :: bookRoomByType()
     cout << "*      Search for a room to book              *" << endl;
     cout << "***********************************************\n" << endl;
 
-    cout << "How many beds? (1 or 2) : ";
-    cin >> numberBeds;
-    cout << endl;
 
-    cout << "A suite or regular room (S for Suite or R for Regular) : ";
-    cin >> roomType;
-    cout << endl;
-
-    cout << "A Smoking room? Only available on the second floor. (Y or N) : ";
-    cin >> smokingRoom;
-    cout << endl;
-
-    if(smokingRoom == 'Y' || smokingRoom == 'y')
+    while (!isValidNum)
     {
-        cout << "That allows smoking." << endl;
-        isSmoking = TRUE;
-    }
-    else if(smokingRoom == 'N' || smokingRoom == 'n')
-    {
-        cout << "That is non-smoking." << endl;
-        isSmoking = FALSE;
-    }
-
-    while(!isItOK)
-    {
-        if(!isSmoking)
+        cout << "How many beds? (1 or 2) : ";
+        while (!(cin >> numberBeds))
         {
-            cout << "Is there a floor preference? (Y or N) : ";
-            cin >> floorPref;
-            cout << endl;
-            if ((floorPref == 'Y') || (floorPref == 'y'))
-                isItOK = TRUE;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize> :: max(), '\n');
+            cout << "You did not enter a number for number of beds." << endl;
+        }
+        if (numberBeds == 1 || numberBeds == 2 )
+        {
+            isValidNum = true;
         }
         else
         {
-            cout << "Smoking rooms are only available on the second floor. " << endl;
-            cout << "Would you still like a smoking room? (Y or N) ";
-            cin >> smokingRoom;
-            cout << endl;
-            if(smokingRoom == 'Y' || smokingRoom == 'y')
-            {
-                cout << "We will continue with a smoking room on the second floor." << endl;
-                isSmoking = TRUE;
-                isItOK = TRUE;
-                floorNum = 2;
-            }
-            else if(smokingRoom == 'N' || smokingRoom == 'n')
-            {
-                cout << "That is non-smoking." << endl;
-                isSmoking = FALSE;
-                isItOK = TRUE;
-            }
-
-
+            cout << "You did not enter a correct number of beds." << endl;
         }
     }
 
+    cout << endl;
 
+    /*
+     * Verify user input for suite question is what is expected
+     */
+    strQuestion = "A suite or regular room (S for Suite or R for Regular) : ";
+    strSelectionIndex = 0;
 
-    if((floorPref == 'Y' || floorPref =='y') && !isSmoking)
+    getUserInputAlpha(strQuestion, strSelectionIndex, isSuite);
+
+    /*
+     * Verify user input for suite question is what is expected
+     */
+    strQuestion = "A Smoking room? Only available on the second floor. (Y or N) : ";
+    strSelectionIndex = 4;
+
+    getUserInputAlpha(strQuestion, strSelectionIndex, isSmoking);
+
+    isValidNum = false;
+/*
+ * If a non smoking room is asked for then see if there is a floor preference
+ */
+    if(!isSmoking)
     {
-        cout << "Which floor would you like? (1 thru 9) : ";
-        cin >> floorNum;
+        /*
+         * Verify user input for suite question is what is expected
+         */
+        strQuestion = "Is there a floor preference? (Y or N) : ";
+        strSelectionIndex = 4;
+
+        getUserInputAlpha(strQuestion, strSelectionIndex, isFloorPref);
+
+        /*
+         * While inputed floor number is not valid and there is a floor pref
+         * get user input
+         */
+        while (!isValidNum && isFloorPref)
+        {
+            cout << "Which floor would you like? (1 thru 10) : ";
+            while (!(cin >> floorNum))
+            {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize> :: max(), '\n');
+                cout << "You did not enter a correct floor number." << endl;
+            }
+            if (floorNum >= 1 && floorNum <= 10 )
+            {
+                isValidNum = true;
+            }
+            else
+            {
+                cout << "You did not enter a correct floor number " << floorNum << endl;
+            }
+        }
         cout << endl;
+    }
+    /*
+     * Else a smoking room is asked for then set floor number to 2
+     * which is where the smoking rooms are located
+     */
+    else
+    {
+        floorNum = 2;
     }
 
     cout <<"To verify you would like a room:" << endl;
     cout << "That is on the " << floorNum << " floor" << endl;
 
-    if(roomType == 'S' || roomType == 's')
-    {
-        cout << "That the is a suite." << endl;
-        isSuite = TRUE;
-    }
-    else if(roomType == 'R' || roomType == 'r')
-    {
-        cout << "That is not a suite." << endl;
-        isSuite = FALSE;
-    }
 
-    system("pause");
+//    system("pause");
     /*
      * If there is a floor preference, then set the index to start on that floor
      * Also set end condition to the end of that section
      */
-    int floorCnt = 0, indMax = 0, foundRoom = 0;
+
 
     switch(floorNum)
     {
@@ -568,7 +598,8 @@ void hotelManagement :: bookRoomByType()
          */
         if((hotelRecord[i].isSuite == isSuite) && (hotelRecord[i].smoking == isSmoking) && (hotelRecord[i].numberBeds == numberBeds) && !hotelRecord[i].isOccupided)
         {
-            foundRoom = i;
+            foundRoom = true;
+            foundRoomInd = i;
             break;
         }
     }
@@ -578,21 +609,39 @@ void hotelManagement :: bookRoomByType()
      */
     if(foundRoom)
     {
-        cout << "Room " << hotelRecord[foundRoom].roomNumber << " is available." << endl;
-        cout << "Would you like to check in? (Y or N) : ";
-        cin >> bookRoom;
-        if ((bookRoom == 'Y') || (bookRoom == 'y'))
+        cout << "Room " << hotelRecord[foundRoomInd].roomNumber << " is available." << endl;
+        /*
+         * Verify user input for suite question is what is expected
+         */
+        strQuestion = "Would you like to check in? (Y or N) : ";
+        strSelectionIndex = 4;
+
+        getUserInputAlpha(strQuestion, strSelectionIndex, bookRoom);
+
+        /*
+         * If answered Y then enter customer information to book the room
+         */
+        if (bookRoom)
         {
-            enterCustomerInfo(hotelRecord[foundRoom].roomNumber, foundRoom);
+            enterCustomerInfo(hotelRecord[foundRoomInd].roomNumber, foundRoomInd);
+        }
+        /*
+         * Else answered N then call bookRoomByType() again.
+         */
+        else
+        {
+            bookRoomByType();
         }
     }
     else
     {
-        cout << "Nothing found." << endl;
+        cout << "Nothing found ..." << endl;
+        cout << "Try different parameters." << endl;
         system("pause");
         bookRoomByType();
     }
-    system("pause");
+
+    displayMainMenu();
 }
 
 void hotelManagement :: bookRoomMenu()
@@ -630,7 +679,7 @@ void hotelManagement :: bookRoomMenu()
             {
                 case 1:
                     cout << "Booking a room by room number." << endl;
-                    bookRoom();
+                    bookRoomByNum();
                     break;
                 case 2:
                     cout << "Book a room by type has been selected." << endl;
@@ -652,8 +701,6 @@ void hotelManagement :: bookRoomMenu()
         }
 }
 
-
-
 void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, bool& validRoomNumber)
 {
     /*
@@ -666,7 +713,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     if((tempRoomNum >= 101) && tempRoomNum <=110)
     {
         vectorIndex = tempRoomNum - 101;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between room 201 and 210
@@ -674,7 +721,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 201) && (tempRoomNum <= 210))
     {
         vectorIndex = tempRoomNum - 191;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 301 to 310
@@ -682,7 +729,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 301) && (tempRoomNum <= 310))
     {
         vectorIndex = tempRoomNum - 281;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 401 to 410
@@ -690,7 +737,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 401) && (tempRoomNum <= 410))
     {
         vectorIndex = tempRoomNum - 371;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 501 to 510
@@ -698,7 +745,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 501) && (tempRoomNum <= 510))
     {
         vectorIndex = tempRoomNum - 461;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 601 to 610
@@ -706,7 +753,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 601) && (tempRoomNum <= 610))
     {
         vectorIndex = tempRoomNum - 551;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 701 to 710
@@ -714,7 +761,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 701) && (tempRoomNum <= 710))
     {
         vectorIndex = tempRoomNum - 641;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 801 to 810
@@ -722,7 +769,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 801) && (tempRoomNum <= 810))
     {
         vectorIndex = tempRoomNum - 731;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 901 to 910
@@ -730,7 +777,7 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 901) && (tempRoomNum <= 910))
     {
         vectorIndex = tempRoomNum - 821;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
     }
     /*
      * if between 1001 to 1010
@@ -738,7 +785,71 @@ void hotelManagement :: isValidRoomNumber(int tempRoomNum, int& vectorIndex, boo
     else if((tempRoomNum >= 1001) && (tempRoomNum <= 1010))
     {
         vectorIndex = tempRoomNum - 911;
-        validRoomNumber = TRUE;
+        validRoomNumber = true;
+    }
+}
+
+void hotelManagement :: getUserInputAlpha(string strQuestion, int strSelectionIndex, bool& setAnswer)
+{
+    /*
+     * This will validate user input for char
+     * Valid user input
+     * Pass in question to ask and the start index for char selection array
+     */
+    char userInput;
+    bool isAlpha = false;
+    char strSelection[] = "SsRrYyNn";
+
+    /*
+     * While the user input is not a letter or the correct letter wanted continue asking the user for selection
+     */
+    while (!isAlpha)
+    {
+        /*
+         * Out put the question
+         */
+        cout << strQuestion;
+        /*
+         * Get the user selection
+         */
+        cin >> userInput;
+        cout << endl;
+
+        /*
+         * Check to see if the inputed selection is a letter
+         */
+        isAlpha = isalpha(userInput);
+
+        /*
+         * If the selection was not a letter state that and the loop will continue
+         */
+        if(!isAlpha)
+        {
+            cout << "You didn't enter a correct selection." << endl;
+        }
+        /*
+         * If the selection is a letter then see if it's an expected answer
+         */
+        else
+        {
+            if ((userInput == strSelection[strSelectionIndex]) || (userInput == strSelection[strSelectionIndex+1]))
+            {
+                setAnswer = true;
+            }
+            else if ((userInput == strSelection[strSelectionIndex+2]) || (userInput == strSelection[strSelectionIndex+3]))
+            {
+                setAnswer = false;
+            }
+            else
+            {
+                /*
+                 * The user selection wasn't part of the expected answers
+                 * Set isAlpha to false and ask again
+                 */
+                cout << "You didn't enter a correct selection. You entered "<< userInput << endl;
+                isAlpha = false;
+            }
+        }
     }
 }
 
@@ -750,11 +861,9 @@ bool hotelManagement :: enterCustomerInfo(int tempHotelRoom, int hotelIndex)
      * update the hotel record
      */
     customerStructure tempCustomer;
-    string tempString, tempStreet, tempCity, tempZip;
-    int endV;
-    char customerInfoCorrect = ' ';
-
-
+    string tempString, tempStreet, tempCity, tempZip, strQuestion;
+    int endV, strSelectionIndex;
+    bool confirmCustInfo = false;
 
     cout << "*******************************************" << endl;
     cout << "*      Enter Customer Information         *" << endl;
@@ -806,35 +915,52 @@ bool hotelManagement :: enterCustomerInfo(int tempHotelRoom, int hotelIndex)
 
     cout << endl;
 
-    tempCustomer.checkedIn = TRUE;
+    cout << "Hotel Index = " << hotelIndex << " Record size = " << customerRecord.size();
+    tempCustomer.checkedIn = true;
 
-    customerRecord[hotelIndex].checkedIn = tempCustomer.checkedIn;
+
 
     customerRecord.push_back(tempCustomer);
-    endV = customerRecord.size() - 1;
+    cout << "Inserted customer into " << (endV = (customerRecord.size() - 1)) << endl;
+    system("pause");
 
+    /*
+     * Verify that the information entered is correct
+     * If it is not correct then delete the inserted vector and
+     * and call enterCustomerInfo() again
+     */
     cout << "************************************************" << endl;
-    cout << "Customer Information" << endl;
+    cout << "Verify Customer Information" << endl;
     cout << "Name    : " << customerRecord[endV].customerName << endl;
     cout << "Address : " << customerRecord[endV].customerAddress << endl;
     cout << "Phone   : " << customerRecord[endV].customerPhone << endl;
     cout << "Room    : " << customerRecord[endV].roomNumber << endl;
     cout << "************************************************" << endl;
 
-    cout << "\nIs the Customer Information Correct? (Y/N) : ";
-    cin >> customerInfoCorrect;
-    cout << endl;
+    /*
+     * Verify user input for suite question is what is expected
+     */
+    strQuestion = "Is the Customer Information Correct? (Y/N) : ";
+    strSelectionIndex = 4;
+
+    getUserInputAlpha(strQuestion, strSelectionIndex, confirmCustInfo);
 
     /*
      * If the user inputed the wrong information then allow them to reenter it.
      */
-    if ((customerInfoCorrect == 'N') || (customerInfoCorrect == 'n'))
+    if (!confirmCustInfo)
     {
         customerRecord.erase(customerRecord.begin() + endV);
         enterCustomerInfo(tempHotelRoom, hotelIndex);
     }
+    /*
+     * Set the room to occupied
+     */
+    hotelRecord[hotelIndex].isOccupided = tempCustomer.checkedIn;
+    cout << "Room :" << hotelRecord[hotelIndex].roomNumber << " is now occupied" << endl;
+    system("pause");
 
-    return TRUE;
+    return true;
 
 }
 
@@ -850,6 +976,129 @@ void hotelManagement :: displayCustomerRecordMenu()
     cout << "3. Go back to Main Menu" << endl;
 }
 
+void hotelManagement :: findCustomInfo()
+{
+    /*
+     * Search through the customerRecord and display customer information
+     */
+    int selection = 0;
+
+    system("cls");
+
+    cout << "***********************************************" << endl;
+    cout << "*      Find Customer Information              *" << endl;
+    cout << "***********************************************\n" << endl;
+    cout << "Select from the following menu" << endl;
+    cout << "1. Search by Customer by name." << endl;
+    cout << "2. Search by room number." << endl;
+    cout << "3. Return to Main Menu." << endl;
+    cout << "Enter selection here : ";
+
+        while (!(cin >> selection))
+        {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize> :: max(), '\n');
+            cout << "You did not enter a correct menu item ." << endl;
+            cout <<"Please enter a menu selection : ";
+        }
+
+    while (selection)
+    {
+        switch (selection)
+        {
+            case 1:
+                cout << endl;
+                cout << "Search by name has been selected." << endl;
+                system("pause");
+                findByName();
+                break;
+            case 2:
+                cout << endl;
+                cout << "Search by room number." << endl;
+                findByRoomNum();
+                break;
+            case 3:
+                cout << endl;
+                cout << "Return to Main Menu." << endl;
+                displayMainMenu();
+                break;
+            default:
+                cout << "Invalid Selection" << endl;
+                system("pause");
+                findCustomInfo();
+        }
+    }
+}
+
+void hotelManagement :: findByName()
+{
+    /*
+     * Get a partial or full name to search for
+     * Display anyone found with partial or full name
+     */
+    string tempString, tempString1;
+    bool customerFound = false;
+    vector <int> indexLoc;
+    vector <customerStructure> tempCustomerStore;
+    /*
+     * Find customer information by searching for a name
+     */
+    cin.ignore (std::numeric_limits<std::streamsize>::max(), '\n');
+    cout << "Enter the name you want to search for : ";
+    getline(cin, tempString);
+
+    cout << "Searching for : " << tempString;
+
+    cout << endl;
+    /*
+     * For the size of records found
+     * print the name and room numbers
+     *
+     */
+    for (int i = 0; i < int(customerRecord.size()); i++)
+    {
+        if(customerRecord[i].customerName.find(tempString) != string::npos)
+        {
+            indexLoc.push_back(i);
+            customerFound = true;
+        }
+    }
+    if(customerFound)
+    {
+        /*
+         * Print out the customers found
+         */
+        for(int j = 0; j < int(indexLoc.size()); j++)
+        {
+            cout << "Customer Information" << endl;
+            cout << "Customer Name : "<< customerRecord[indexLoc[j]].customerName << endl;
+            cout << "Room Number   : " << customerRecord[indexLoc[j]].roomNumber << endl;
+            if(customerRecord[indexLoc[j]].checkedIn)
+            {
+                cout << "Has checked in" << endl;
+            }
+            else
+            {
+                cout << "Is not checked in" << endl;
+            }
+            cout << endl;
+        }
+    }
+    else
+    {
+        cout << "Customer not found" << endl;
+    }
+
+    system("pause");
+    findCustomInfo();
+
+}
+
+void hotelManagement :: findByRoomNum()
+{
+    cout << "Nothing to see here yet!" << endl;
+
+}
 int main()
 {
     hotelManagement ourHotel;
